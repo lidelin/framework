@@ -2,6 +2,7 @@
 
 namespace Illuminate\Tests\Database;
 
+use Mockery;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\TestCase;
 use Illuminate\Filesystem\Filesystem;
@@ -31,6 +32,9 @@ class DatabaseMigratorIntegrationTest extends TestCase
 
         $container = new \Illuminate\Container\Container;
         $container->instance('db', $db->getDatabaseManager());
+        $container->bind('db.schema', function ($c) {
+            return $c['db']->connection()->getSchemaBuilder();
+        });
         \Illuminate\Support\Facades\Facade::setFacadeApplication($container);
 
         $this->migrator = new Migrator(
@@ -38,6 +42,11 @@ class DatabaseMigratorIntegrationTest extends TestCase
             $db->getDatabaseManager(),
             new Filesystem
         );
+
+        $output = Mockery::mock('\Illuminate\Console\OutputStyle');
+        $output->shouldReceive('writeln');
+
+        $this->migrator->setOutput($output);
 
         if (! $repository->repositoryExists()) {
             $repository->createRepository();

@@ -167,7 +167,7 @@ class Validator implements ValidatorContract
     protected $dependentRules = [
         'RequiredWith', 'RequiredWithAll', 'RequiredWithout', 'RequiredWithoutAll',
         'RequiredIf', 'RequiredUnless', 'Confirmed', 'Same', 'Different', 'Unique',
-        'Before', 'After', 'BeforeOrEqual', 'AfterOrEqual',
+        'Before', 'After', 'BeforeOrEqual', 'AfterOrEqual', 'Gt', 'Lt', 'Gte', 'Lte',
     ];
 
     /**
@@ -175,7 +175,7 @@ class Validator implements ValidatorContract
      *
      * @var array
      */
-    protected $sizeRules = ['Size', 'Between', 'Min', 'Max'];
+    protected $sizeRules = ['Size', 'Between', 'Min', 'Max', 'Gt', 'Lt', 'Gte', 'Lte'];
 
     /**
      * The numeric related validation rules.
@@ -308,12 +308,14 @@ class Validator implements ValidatorContract
 
         $results = [];
 
-        $rules = collect($this->getRules())->keys()->map(function ($rule) {
-            return Str::contains($rule, '*') ? explode('.', $rule)[0] : $rule;
-        })->unique();
+        $missingValue = Str::random(10);
 
-        foreach ($rules as $rule) {
-            Arr::set($results, $rule, data_get($this->getData(), $rule));
+        foreach (array_keys($this->getRules()) as $key) {
+            $value = data_get($this->getData(), $key, $missingValue);
+
+            if ($value !== $missingValue) {
+                Arr::set($results, $key, $value);
+            }
         }
 
         return $results;
@@ -499,7 +501,7 @@ class Validator implements ValidatorContract
         $data = ValidationData::initializeAndGatherData($attribute, $this->data);
 
         return array_key_exists($attribute, $data)
-                    || in_array($attribute, array_keys($this->data));
+                    || array_key_exists($attribute, $this->data);
     }
 
     /**
@@ -564,7 +566,7 @@ class Validator implements ValidatorContract
         }
 
         if (isset($this->failedRules[$attribute]) &&
-            in_array('uploaded', array_keys($this->failedRules[$attribute]))) {
+            array_key_exists('uploaded', $this->failedRules[$attribute])) {
             return true;
         }
 
@@ -584,8 +586,12 @@ class Validator implements ValidatorContract
      * @param  array   $parameters
      * @return void
      */
-    protected function addFailure($attribute, $rule, $parameters)
+    public function addFailure($attribute, $rule, $parameters = [])
     {
+        if (! $this->messages) {
+            $this->passes();
+        }
+
         $this->messages->add($attribute, $this->makeReplacements(
             $this->getMessage($attribute, $rule), $attribute, $rule, $parameters
         ));

@@ -50,6 +50,34 @@ class BladeCustomTest extends AbstractBladeTestCase
         $this->assertEquals($expected, $this->compiler->compileString($string));
     }
 
+    public function testValidCustomNames()
+    {
+        $this->assertNull($this->compiler->directive('custom', function () {
+        }));
+        $this->assertNull($this->compiler->directive('custom_custom', function () {
+        }));
+        $this->assertNull($this->compiler->directive('customCustom', function () {
+        }));
+        $this->assertNull($this->compiler->directive('custom::custom', function () {
+        }));
+    }
+
+    public function testInvalidCustomNames()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('The directive name [custom-custom] is not valid.');
+        $this->compiler->directive('custom-custom', function () {
+        });
+    }
+
+    public function testInvalidCustomNames2()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('The directive name [custom:custom] is not valid.');
+        $this->compiler->directive('custom:custom', function () {
+        });
+    }
+
     public function testCustomExtensionOverwritesCore()
     {
         $this->compiler->directive('foreach', function ($expression) {
@@ -87,6 +115,21 @@ class BladeCustomTest extends AbstractBladeTestCase
         $expected = '<?php if (\Illuminate\Support\Facades\Blade::check(\'custom\', $user)): ?>
 <?php elseif (\Illuminate\Support\Facades\Blade::check(\'custom\', $product)): ?>
 <?php else: ?>
+<?php endif; ?>';
+        $this->assertEquals($expected, $this->compiler->compileString($string));
+    }
+
+    public function testCustomConditionsAccepts0AsArgument()
+    {
+        $this->compiler->if('custom', function ($number) {
+            return true;
+        });
+
+        $string = '@custom(0)
+@elsecustom(0)
+@endcustom';
+        $expected = '<?php if (\Illuminate\Support\Facades\Blade::check(\'custom\', 0)): ?>
+<?php elseif (\Illuminate\Support\Facades\Blade::check(\'custom\', 0)): ?>
 <?php endif; ?>';
         $this->assertEquals($expected, $this->compiler->compileString($string));
     }

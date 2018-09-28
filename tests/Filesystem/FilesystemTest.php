@@ -47,7 +47,8 @@ class FilesystemTest extends TestCase
         $files = new Filesystem;
         $files->chmod($this->tempDir.'/file.txt', 0755);
         $filePermission = substr(sprintf('%o', fileperms($this->tempDir.'/file.txt')), -4);
-        $this->assertEquals('0755', $filePermission);
+        $expectedPermissions = DIRECTORY_SEPARATOR == '\\' ? '0666' : '0755';
+        $this->assertEquals($expectedPermissions, $filePermission);
     }
 
     public function testGetChmod()
@@ -56,8 +57,9 @@ class FilesystemTest extends TestCase
         chmod($this->tempDir.'/file.txt', 0755);
 
         $files = new Filesystem;
-        $filePermisson = $files->chmod($this->tempDir.'/file.txt');
-        $this->assertEquals('0755', $filePermisson);
+        $filePermission = $files->chmod($this->tempDir.'/file.txt');
+        $expectedPermissions = DIRECTORY_SEPARATOR == '\\' ? '0666' : '0755';
+        $this->assertEquals($expectedPermissions, $filePermission);
     }
 
     public function testDeleteRemovesFiles()
@@ -457,9 +459,7 @@ class FilesystemTest extends TestCase
         file_put_contents($this->tempDir.'/foo/2.txt', '2');
         mkdir($this->tempDir.'/foo/bar');
         $files = new Filesystem;
-        foreach ($files->files($this->tempDir.'/foo') as $file) {
-            $this->assertInstanceOf(\SplFileInfo::class, $file);
-        }
+        $this->assertContainsOnlyInstancesOf(\SplFileInfo::class, $files->files($this->tempDir.'/foo'));
         unset($files);
     }
 
@@ -469,9 +469,7 @@ class FilesystemTest extends TestCase
         file_put_contents($this->tempDir.'/bar.txt', 'bar');
         $files = new Filesystem;
         $allFiles = [];
-        foreach ($files->allFiles($this->tempDir) as $file) {
-            $this->assertInstanceOf(\SplFileInfo::class, $file);
-        }
+        $this->assertContainsOnlyInstancesOf(\SplFileInfo::class, $files->allFiles($this->tempDir));
     }
 
     public function testCreateFtpDriver()

@@ -4,11 +4,12 @@ namespace Illuminate\Redis\Connections;
 
 use Redis;
 use Closure;
+use Illuminate\Contracts\Redis\Connection as ConnectionContract;
 
 /**
  * @mixin \Redis
  */
-class PhpRedisConnection extends Connection
+class PhpRedisConnection extends Connection implements ConnectionContract
 {
     /**
      * Create a new PhpRedis connection.
@@ -153,6 +154,32 @@ class PhpRedisConnection extends Connection
     public function lrem($key, $count, $value)
     {
         return $this->command('lrem', [$key, $value, $count]);
+    }
+
+    /**
+     * Removes and returns the first element of the list stored at key.
+     *
+     * @param  dynamic  $arguments
+     * @return array|null
+     */
+    public function blpop(...$arguments)
+    {
+        $result = $this->command('blpop', $arguments);
+
+        return empty($result) ? null : $result;
+    }
+
+    /**
+     * Removes and returns the last element of the list stored at key.
+     *
+     * @param  dynamic  $arguments
+     * @return array|null
+     */
+    public function brpop(...$arguments)
+    {
+        $result = $this->command('brpop', $arguments);
+
+        return empty($result) ? null : $result;
     }
 
     /**
@@ -308,7 +335,7 @@ class PhpRedisConnection extends Connection
     }
 
     /**
-     * Evaluate a script and retunr its result.
+     * Evaluate a script and return its result.
      *
      * @param  string  $script
      * @param  int  $numberOfKeys

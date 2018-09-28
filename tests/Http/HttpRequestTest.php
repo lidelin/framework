@@ -79,9 +79,9 @@ class HttpRequestTest extends TestCase
     {
         return [
             ['', 1, 'default'],
-            ['foo/bar//baz', '1', 'foo'],
-            ['foo/bar//baz', '2', 'bar'],
-            ['foo/bar//baz', '3', 'baz'],
+            ['foo/bar//baz', 1, 'foo'],
+            ['foo/bar//baz', 2, 'bar'],
+            ['foo/bar//baz', 3, 'baz'],
         ];
     }
 
@@ -141,6 +141,9 @@ class HttpRequestTest extends TestCase
 
         $request = Request::create('http://foo.com/foo/bar/?name=taylor', 'GET');
         $this->assertEquals('http://foo.com/foo/bar?name=graham', $request->fullUrlWithQuery(['name' => 'graham']));
+
+        $request = Request::create('https://foo.com', 'GET');
+        $this->assertEquals('https://foo.com/?key=value%20with%20spaces', $request->fullUrlWithQuery(['key' => 'value with spaces']));
     }
 
     public function testIsMethod()
@@ -368,12 +371,12 @@ class HttpRequestTest extends TestCase
         $this->assertNull($request['non-existant']);
 
         $this->assertTrue(isset($request['name']));
-        $this->assertEquals(null, $request['name']);
+        $this->assertNull($request['name']);
 
         $this->assertNotEquals('Taylor', $request['name']);
 
         $this->assertTrue(isset($request['foo.bar']));
-        $this->assertEquals(null, $request['foo.bar']);
+        $this->assertNull($request['foo.bar']);
         $this->assertTrue(isset($request['foo.baz']));
         $this->assertEquals('', $request['foo.baz']);
 
@@ -527,6 +530,13 @@ class HttpRequestTest extends TestCase
         $request->replace($replace);
         $this->assertNull($request->input('name'));
         $this->assertEquals('Dayle', $request->input('buddy'));
+    }
+
+    public function testOffsetUnsetMethod()
+    {
+        $request = Request::create('/', 'HEAD', ['name' => 'Taylor']);
+        $request->offsetUnset('name');
+        $this->assertNull($request->input('name'));
     }
 
     public function testHeaderMethod()
